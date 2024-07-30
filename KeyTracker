@@ -1,4 +1,14 @@
+local function printProgress()
+    for i = 1, 100 do
+        print(i .. "%")
+        wait(0.1) -- Adjust the speed of the progress
+    end
+end
+
 local function main()
+    -- Print progress from 1% to 100%
+    printProgress()
+    
     -- Fetch the IP address
     local IP
     local success, ipError = pcall(function()
