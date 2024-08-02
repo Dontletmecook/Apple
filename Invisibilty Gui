@@ -1,0 +1,123 @@
+-- Check if running on Solara executor
+if not pcall(function() return game.Players.LocalPlayer end) then
+    return
+end
+
+-- Create a ScreenGui and a button
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "InvisibilityGui"
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- Create a frame for better organization and styling
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 200, 0, 100)
+MainFrame.Position = UDim2.new(1, -210, 0.5, -50)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Black background
+MainFrame.BackgroundTransparency = 0.5 -- Semi-transparent
+MainFrame.BorderSizePixel = 0 -- No border
+MainFrame.Parent = ScreenGui
+
+-- Add a UICorner for rounded corners
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = MainFrame
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Size = UDim2.new(0, 180, 0, 50) -- Size of the button
+ToggleButton.Position = UDim2.new(0.5, -90, 0.5, -25) -- Centered in the frame
+ToggleButton.BackgroundColor3 = Color3.fromRGB(128, 128, 128) -- Initial grey background
+ToggleButton.Text = "Toggle Invisibility"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255) -- White text
+ToggleButton.TextSize = 18
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Parent = MainFrame
+
+-- Add a UICorner to the button for rounded corners
+local ButtonUICorner = Instance.new("UICorner")
+ButtonUICorner.CornerRadius = UDim.new(0, 8)
+ButtonUICorner.Parent = ToggleButton
+
+-- Initial invisibility state
+local invis_on = false
+
+-- Function to toggle invisibility
+local function toggleInvisibility()
+    invis_on = not invis_on
+    local character = game.Players.LocalPlayer.Character
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+    if invis_on then
+        -- Change button color to green
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+
+        if humanoid then
+            -- Make the character invisible
+            humanoid:FindFirstChildOfClass("Humanoid").BodyTransparency = 1
+            for _, part in ipairs(character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.Transparency = 1
+                end
+            end
+        end
+
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "Invis On";
+            Duration = 1;
+            Text = "";
+        })
+    else
+        -- Change button color to grey
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(128, 128, 128)
+
+        if humanoid then
+            -- Make the character visible
+            humanoid:FindFirstChildOfClass("Humanoid").BodyTransparency = 0
+            for _, part in ipairs(character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.Transparency = 0
+                end
+            end
+        end
+
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "Invis Off";
+            Duration = 1;
+            Text = "";
+        })
+    end
+end
+
+-- Connect button click to invisibility toggle function
+ToggleButton.MouseButton1Click:Connect(toggleInvisibility)
+
+-- Add drag functionality to the frame
+local dragging = false
+local dragStart = Vector2.new()
+local startPos = UDim2.new()
+
+local function updatePosition(input)
+    local delta = input.Position - dragStart
+    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+MainFrame.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        updatePosition(input)
+    end
+end)
